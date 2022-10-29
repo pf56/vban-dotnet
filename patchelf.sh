@@ -1,0 +1,1 @@
+patchelf --set-rpath /nix/store/10ljja23yamvcmaii8cv94hn4g8knwzn-libjack2-1.9.19/lib:/nix/store/d01894jn8xcgqgs3gdvil7pvxq4rkmv5-alsa-lib-1.2.6.1/lib:/nix/store/gb767n6kyx81a0n3fc75vwhs3ngvj2yp-libpulseaudio-15.0/lib:/nix/store/j132k1ncfn6gjfd2f5s1gz37170rch4h-gcc-11.3.0-lib/lib x64/libxt-audio.so
