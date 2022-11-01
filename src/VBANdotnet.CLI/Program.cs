@@ -1,6 +1,6 @@
 ﻿using System.Buffers;
 using System.IO.Pipelines;
-using Microsoft.Extensions.DependencyInjection;
+using System.Net;
 using Microsoft.Extensions.Hosting;
 using VBANdotnet.CLI;
 using Xt;
@@ -69,10 +69,13 @@ public static class Program
 
 		stream.Start();
 
+		AudioClient audioClient = new(IPAddress.Any, 45234);
+		audioClient.Start();
+
 		using IHost host = Host.CreateDefaultBuilder()
 			.ConfigureServices(services =>
 			{
-				services.AddHostedService<UDPService>();
+				//services.AddHostedService<UDPService>();
 			})
 			.Build();
 
