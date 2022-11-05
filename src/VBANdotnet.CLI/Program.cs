@@ -1,6 +1,4 @@
-﻿using System.Buffers;
-using System.IO.Pipelines;
-using System.Net;
+﻿using System.Net;
 using Microsoft.Extensions.Hosting;
 using VBANdotnet.CLI;
 using Xt;
@@ -12,10 +10,12 @@ public static class Program
 	private static readonly XtChannels Channels = new(0, 0, 2, 0);
 	private static readonly XtFormat Format = new(Mix, Channels);
 
-	public static Pipe Data = new(new PipeOptions());
+	public static AudioData[] Buffer = new AudioData[3840];
+	public static int readerPosition = 0;
+	public static int writerPosition = 0;
 
 	[STAThread]
-	public static async Task Main()
+	public static void Main()
 	{
 		// setup XtAudio
 		using XtPlatform platform = XtAudio.Init(null, IntPtr.Zero);
@@ -31,30 +31,33 @@ public static class Program
 
 		int ProcessUdp(XtStream stream, in XtBuffer buffer, object user)
 		{
-			PipeReader reader = Data.Reader;
 			XtSafeBuffer safe = XtSafeBuffer.Get(stream);
 			safe.Lock(in buffer);
 			short[] output = (short[])safe.GetOutput();
 
-			if(reader.TryRead(out ReadResult result))
+
+			int size = buffer.frames;
+			//AudioData[] audioDatas = Buffer[readerPosition..(readerPosition + size)];
+
+			for(int i = 0; i < size; i++)
 			{
-				int size = (int)(result.Buffer.Length / 4) * 4;
-				int maxIterations = Math.Min(buffer.frames, size / 4);
+				readerPosition += 1;
 
-				for(int i = 0; i < maxIterations; i++)
-				{
-					ReadOnlySequence<byte> data = result.Buffer.Slice(i * 4, 4);
+				// if(readerPosition == writerPosition)
+				// 	readerPosition--;
 
-					AudioData audioData = AudioData.Read(data.ToArray());
-					output[i*2] = audioData.Left;
-					output[i*2+1] = audioData.Right;
-				}
+				readerPosition %= Buffer.Length;
 
-				reader.AdvanceTo(result.Buffer.GetPosition(maxIterations * 4, result.Buffer.Start));
-			}
-			else
-			{
-				Console.WriteLine("missing audio");
+				// if(readerPosition == 0)
+				// {
+				// 	writerPosition = 0;
+				// }
+
+				AudioData audioData = Buffer[readerPosition];
+				output[i * 2] = audioData.Left;
+				output[i * 2 + 1] = audioData.Right;
+
+				//Console.WriteLine("Read: " + readerPosition + " " + audioData.Left + " " + audioData.Right);
 			}
 
 			safe.Unlock(in buffer);
@@ -63,22 +66,26 @@ public static class Program
 
 		XtBufferSize size = device.GetBufferSize(Format);
 		XtStreamParams streamParams = new(true, ProcessUdp, null, null);
-		XtDeviceStreamParams deviceParams = new(in streamParams, in Format, size.current);
+		XtDeviceStreamParams deviceParams = new(in streamParams, in Format, size.min);
 		using XtStream stream = device.OpenStream(in deviceParams, null);
 		using XtSafeBuffer safe = XtSafeBuffer.Register(stream);
-
 		stream.Start();
 
 		AudioClient audioClient = new(IPAddress.Any, 45234);
 		audioClient.Start();
 
-		using IHost host = Host.CreateDefaultBuilder()
-			.ConfigureServices(services =>
-			{
-				//services.AddHostedService<UDPService>();
-			})
-			.Build();
+		while(true)
+		{
 
-		await host.RunAsync();
+		}
+
+		// using IHost host = Host.CreateDefaultBuilder()
+		// 	.ConfigureServices(services =>
+		// 	{
+		// 		//services.AddHostedService<UDPService>();
+		// 	})
+		// 	.Build();
+		//
+		// await host.RunAsync();
 	}
 }

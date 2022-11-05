@@ -1,8 +1,5 @@
-using System.IO.Pipelines;
-using System.IO.Pipes;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using NetCoreServer;
 
 #nullable enable
@@ -12,12 +9,7 @@ namespace VBANdotnet.CLI;
 public class AudioClient : UdpServer
 {
 	public AudioClient(IPAddress address, int port) : base(address, port)
-	{
-		Writer = Program.Data.Writer;
-	}
-
-	private PipeWriter Writer;
-	private bool _stop;
+	{ }
 
 	protected override void OnStarted()
 	{
@@ -31,9 +23,6 @@ public class AudioClient : UdpServer
 		{
 			//VBANHeader header = VBANHeader.Read(receiveBytes);
 
-			Memory<byte> memory = Writer.GetMemory((int)size);
-			int i = 0;
-
 			for(int f = 28; f < size; f += 4)
 			{
 				AudioData audioData = new()
@@ -42,14 +31,13 @@ public class AudioClient : UdpServer
 					Right = (short)(receiveBytes[f + 3] << 8 | receiveBytes[f + 2])
 				};
 
-				AudioData.Write(audioData).CopyTo(memory[i..(i+4)]);
 
-				i += 4;
+				Program.writerPosition += 1;
+				Program.writerPosition %= Program.Buffer.Length;
+				Program.Buffer[Program.writerPosition] = audioData;
+
+				//Console.WriteLine("Written: " + Program.writerPosition + " " + audioData.Left + " " + audioData.Right);
 			}
-
-
-			Writer.Advance((int)(size - 28));
-			_ = Writer.FlushAsync();
 		}
 		catch(Exception e)
 		{
