@@ -21,7 +21,7 @@ public static class Program
 	{
 		// setup XtAudio
 		using XtPlatform platform = XtAudio.Init(null, IntPtr.Zero);
-		XtSystem system = platform.SetupToSystem(XtSetup.ConsumerAudio);
+		XtSystem system = platform.SetupToSystem(XtSetup.SystemAudio);
 		XtService service = platform.GetService(system);
 		if(service == null)
 		{
