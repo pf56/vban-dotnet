@@ -1,4 +1,3 @@
-#nullable enable
 namespace VBANdotnet.CLI;
 
 public struct AudioData

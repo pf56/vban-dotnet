@@ -2,22 +2,22 @@ using System.Net;
 using System.Net.Sockets;
 using NetCoreServer;
 
-#nullable enable
 namespace VBANdotnet.CLI;
 
-
-public class AudioClient : UdpServer
+public class AudioClient(IPAddress address, int port) : UdpServer(address, port)
 {
-	public AudioClient(IPAddress address, int port) : base(address, port)
-	{ }
-
 	protected override void OnStarted()
 	{
-		// Start receive datagrams
+		// Start receiving datagrams
 		ReceiveAsync();
 	}
 
-	protected override void OnReceived(EndPoint endpoint, byte[] receiveBytes, long offset, long size)
+	protected override void OnReceived(
+		EndPoint endpoint,
+		byte[] receiveBytes,
+		long offset,
+		long size
+		)
 	{
 		try
 		{
@@ -27,16 +27,11 @@ public class AudioClient : UdpServer
 			{
 				AudioData audioData = new()
 				{
-					Left = (short)(receiveBytes[f + 1] << 8 | receiveBytes[f]),
-					Right = (short)(receiveBytes[f + 3] << 8 | receiveBytes[f + 2])
+					Left = (short)((receiveBytes[f + 1] << 8) | receiveBytes[f]),
+					Right = (short)((receiveBytes[f + 3] << 8) | receiveBytes[f + 2])
 				};
 
-
-				Program.writerPosition += 1;
-				Program.writerPosition %= Program.Buffer.Length;
-				Program.Buffer[Program.writerPosition] = audioData;
-
-				//Console.WriteLine("Written: " + Program.writerPosition + " " + audioData.Left + " " + audioData.Right);
+				Program.Data.Writer.TryWrite(audioData);
 			}
 		}
 		catch(Exception e)
@@ -50,6 +45,6 @@ public class AudioClient : UdpServer
 
 	protected override void OnError(SocketError error)
 	{
-		Console.WriteLine($"Echo UDP client caught an error with code {error}");
+		Console.WriteLine($"{nameof(AudioClient)} caught an error with code {error}");
 	}
 }
