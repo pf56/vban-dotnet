@@ -1,5 +1,5 @@
 { pkgs ? import <nixpkgs> {} }:
 
   pkgs.mkShell {
-    nativeBuildInputs = with pkgs; [ jetbrains.rider dotnet-sdk dotnet-runtime libjack2 libpulseaudio ];
+    nativeBuildInputs = with pkgs; [ dotnet-sdk_8 dotnet-runtime_8 libjack2 libpulseaudio ];
   }

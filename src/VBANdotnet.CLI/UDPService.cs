@@ -11,7 +11,7 @@ public class UDPService : BackgroundService
 {
 	protected override Task ExecuteAsync(CancellationToken stoppingToken)
 	{
-		AudioClient audioClient = new(IPAddress.Any, 45234);
+		AudioClient audioClient = new(IPAddress.Any, 6980);
 		audioClient.Start();
 
 		while(!stoppingToken.IsCancellationRequested)
